@@ -1,0 +1,39 @@
+{
+	"@metadata": {
+		"authors": [
+			"KockaAdmiralac"
+		]
+	},
+	"discord-desc": "Шаље поруке на Discord канал када се десе одређени догађаји",
+	"discord-userlinks": "$1 ($2|$3)",
+	"discord-revisionlinks": "($1) $2 $3",
+	"discord-talk": "р",
+	"discord-contribs": "д",
+	"discord-diff": "разл",
+	"discord-minor": "(м)",
+	"discord-size": "($1)",
+	"discord-edit": "$1 је уредио/ла $2 $3 $4",
+	"discord-create": "$1 је направио/ла $2 $3 $4",
+	"discord-articledelete": "$1 је обрисао/ла $2 $3 ($4 измена обрисано)",
+	"discord-undeleterev": "измене за",
+	"discord-articleundelete": "$1 је вратио/ла $2 $3 $4",
+	"discord-revvisibility": "$1 је променио/ла видљивост на $2 измена на $3",
+	"discord-articleprotect": "$1 је променио/ла подешавања заштите на $2 $3 ($4)",
+	"discord-titlemove": "$1 је померио/ла $2 на $3 $4 $5",
+	"discord-localusercreated": "$1 се регистровао/ла",
+	"discord-blocktimeformat": "d F Y H:i",
+	"discord-blockipcomplete": "$1 је блокирао/ла $2 $3 ($4)",
+	"discord-unblockusercomplete": "$1 је деблокирао/ла $2",
+	"discord-usergroupschanged": "$1 је променио/ла права од $2 $3 ($4) ($5)",
+	"discord-uploadnewver": "нову верзију",
+	"discord-uploadcomplete": "$1 је отпремио/ла $2 $3 $4 ($5, $6x$7, $8)",
+	"discord-filedeletecomplete": "$1 је обрисао/ла верзију датотеке $2 $3",
+	"discord-fileundeletecomplete": "$1 је вратио/ла поједине верзије датотеке $2 $3",
+	"discord-afterimportpage": "$1 је увезао/ла $2 (imported $4/$3 revisions)",
+	"discord-timestampformat": "**H:i e:**",
+	"discord-articlemergecomplete": "$1 је спојио измене из $2 у $3",
+	"discord-approvedrevsrevisionapproved": "$1 је одобрио нову измену $2 (измена $3) од корисника $4",
+	"discord-approvedrevsrevisionunapproved": "$1 је поништио одобрење измене $2",
+	"discord-approvedrevsfilerevisionapproved": "$1 је одобрио нову измену датотеке $2 ($3) од корисника $4",
+	"discord-approvedrevsfilerevisionunapproved": "$1 је поништио одобрење измене датотеке $2"
+}
