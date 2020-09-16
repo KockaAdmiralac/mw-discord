@@ -46,7 +46,7 @@ class DiscordUtils {
 	 * Handles sending a webhook to Discord using cURL
 	 */
 	public static function handleDiscord ($emoji, $msg) {
-		global $wgDiscordWebhookURL, $wgDiscordUseEmojis, $wgDiscordPrependTimestamp, $wgDiscordUseFileGetContents;
+		global $wgDiscordWebhookURL, $wgDiscordUseEmojis, $wgDiscordPrependTimestamp, $wgDiscordUseFileGetContents, $wgDiscordAllowedMentions;
 
 		if ( !$wgDiscordWebhookURL ) {
 			// There's nothing in here, so we won't do anything
@@ -78,9 +78,12 @@ class DiscordUtils {
 			$stripped = $emoji . ' ' . $stripped;
 		}
 
-		DeferredUpdates::addCallableUpdate( function() use ( $stripped, $urls, $wgDiscordUseFileGetContents ) {
+		DeferredUpdates::addCallableUpdate( function() use ( $stripped, $urls, $wgDiscordUseFileGetContents, $wgDiscordAllowedMentions ) {
 			$user_agent = 'mw-discord/1.0 (github.com/jaydenkieran)';
-			$json_data = [ 'content' => "$stripped" ];
+			$json_data = [
+				'allowed_mentions' => $wgDiscordAllowedMentions,
+				'content' => "$stripped"
+			];
 			$json = json_encode($json_data);	
 
 			if ( $wgDiscordUseFileGetContents ) {

@@ -54,6 +54,7 @@ This extension can be configured using the `LocalSettings.php` file in your Medi
 | `$wgDiscordPrependTimestamp` | bool | Prepend a timestamp (in UTC) to all sent messages. The format can be changed by editing the MediaWiki message `discord-timestampformat` | `false`
 | `$wgDiscordUseFileGetContents` | bool | Use `file_get_contents` instead of cURL. Requires `allow_url_fopen` to be set to true in `php.ini`. Not recommended as cURL makes simultaneous calls instead. | `false`
 | `$wgDiscordUseEmojis` | bool | Prepend emojis to different types of messages to help distinguish them | `false`
+| `$wgDiscordAllowedMentions` | object | Who is the Discord webhook allowed to mention (see [Discord's documentation](https://discord.com/developers/docs/resources/channel#allowed-mentions-object)) | `[ 'parse' => [ 'users' ]]`
 
 ## Hooks used
 - `PageContentSaveComplete` - New edits to pages and page creations

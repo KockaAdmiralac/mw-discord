@@ -20,7 +20,10 @@
 		"DiscordDisabledUsers": [],
 		"DiscordPrependTimestamp": false,
 		"DiscordUseFileGetContents": false,
-		"DiscordUseEmojis": false
+		"DiscordUseEmojis": false,
+		"DiscordAllowedMentions": {
+			"parse": ["users"]
+		}
 	},
 	"AutoloadClasses": {
 		"DiscordHooks": "src/DiscordHooks.php",
