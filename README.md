@@ -11,14 +11,14 @@ Multiple webhook URLs are supported and messages will be sent to all of them.
 
 ## Requirements
 - **Discord webhook URL**: This can be obtained by editing a channel on a server with the correct permissions.
-- **MediaWiki 1.31+**
+- **MediaWiki 1.36+**. This extension aims to support the latest LTS release. **Ensure you are using the correct branch of this extension for your MediaWiki version. The `master` branch includes changes only applicable for the latest MediaWiki version.**
 
 ### Recommended
 - **cURL**: By default, this extension sends requests using cURL. If you don't have cURL, you could try setting `$wgDiscordUseFileGetContents` to `true` instead, but this is not recommended.
 
 ## Installation
 
-1. Clone this repository to your MediaWiki installation's `extensions` folder using `git clone https://github.com/jaydenkieran/mw-discord.git -b REL1_35 Discord` (or change `REL1_35` to the branch that corresponds with or is the closest version under your MediaWiki version, e.g `REL1_31` will work for 1.32, 1.33, and 1.34)
+1. Clone this repository to your MediaWiki installation's `extensions` folder using `git clone https://github.com/jaydenkieran/mw-discord.git -b REL1_35 Discord`
 2. Modify your `LocalSettings.php` file and add:
 
 ```php
@@ -48,21 +48,22 @@ This extension can be configured using the `LocalSettings.php` file in your Medi
 | `$wgDiscordNoNull` | bool | Do not send notifications for [null edits](https://www.mediawiki.org/wiki/Manual:Purge#Null_edits) | `true`
 | `$wgDiscordSuppressPreviews` | bool | Force previews for links in Discord messages to be suppressed | `true`
 | `$wgDiscordMaxChars` | int | Maximum amount of characters for user-generated text (e.g summaries, reasons). Set to `null` to disable truncation | `null`
+| `$wgDiscordMaxCharsUsernames` | int | Maximum amount of characters for usernames. Set to `null` to disable truncation | `25`
 | `$wgDiscordDisabledHooks` | array | List of hooks to disable sending webhooks for (see [below](#hooks-used)) | `[]`
 | `$wgDiscordDisabledNS` | array | List of namespaces to disable sending webhooks for | `[]`
 | `$wgDiscordDisabledUsers` | array | List of users whose performed actions shouldn't send webhooks | `[]`
 | `$wgDiscordPrependTimestamp` | bool | Prepend a timestamp (in UTC) to all sent messages. The format can be changed by editing the MediaWiki message `discord-timestampformat` | `false`
 | `$wgDiscordUseFileGetContents` | bool | Use `file_get_contents` instead of cURL. Requires `allow_url_fopen` to be set to true in `php.ini`. Not recommended as cURL makes simultaneous calls instead. | `false`
 | `$wgDiscordUseEmojis` | bool | Prepend emojis to different types of messages to help distinguish them | `false`
-| `$wgDiscordAllowedMentions` | object | Who is the Discord webhook allowed to mention (see [Discord's documentation](https://discord.com/developers/docs/resources/channel#allowed-mentions-object)) | `[ 'parse' => [ 'users' ]]`
+| `$wgDiscordEmojis` | array | Map of hook names and their associated emojis to prepend to messages if `$wgDiscordUseEmojis` is enabled | See [extension.json](/extension.json)
 
 ## Hooks used
-- `PageContentSaveComplete` - New edits to pages and page creations
+- `PageSaveComplete` - New edits to pages and page creations
 - `ArticleDeleteComplete` - Page deletions
 - `ArticleUndelete` - Page restorations
 - `ArticleRevisionVisibilitySet` - Revision visibility changes
 - `ArticleProtectComplete` - Page protections
-- `TitleMoveComplete` - Page moves
+- `PageMoveComplete` - Page moves
 - `LocalUserCreated` - User registrations
 - `BlockIpComplete` - User blocked
 - `UnblockUserComplete` - User unblocked

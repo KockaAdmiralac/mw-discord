@@ -1,5 +1,7 @@
 <?php
 
+use MediaWiki\MediaWikiServices;
+
 class DiscordUtils {
 	/**
 	 * Checks if criteria is met for this action to be cancelled
@@ -45,8 +47,8 @@ class DiscordUtils {
 	/**
 	 * Handles sending a webhook to Discord using cURL
 	 */
-	public static function handleDiscord ($emoji, $msg) {
-		global $wgDiscordWebhookURL, $wgDiscordUseEmojis, $wgDiscordPrependTimestamp, $wgDiscordUseFileGetContents, $wgDiscordAllowedMentions;
+	public static function handleDiscord ($hookName, $msg) {
+		global $wgDiscordWebhookURL, $wgDiscordEmojis, $wgDiscordUseEmojis, $wgDiscordPrependTimestamp, $wgDiscordUseFileGetContents;
 
 		if ( !$wgDiscordWebhookURL ) {
 			// There's nothing in here, so we won't do anything
@@ -75,16 +77,19 @@ class DiscordUtils {
 
 		if ( $wgDiscordUseEmojis ) {
 			// Add emoji
+			$emoji = $wgDiscordEmojis[$hookName];
 			$stripped = $emoji . ' ' . $stripped;
 		}
 
-		DeferredUpdates::addCallableUpdate( function() use ( $stripped, $urls, $wgDiscordUseFileGetContents, $wgDiscordAllowedMentions ) {
+		DeferredUpdates::addCallableUpdate( function() use ( $stripped, $urls, $wgDiscordUseFileGetContents ) {
 			$user_agent = 'mw-discord/1.0 (github.com/jaydenkieran)';
 			$json_data = [
-				'allowed_mentions' => $wgDiscordAllowedMentions,
-				'content' => "$stripped"
+				'content' => "$stripped",
+				'allowed_mentions' => [
+					'parse' => []
+				]
 			];
-			$json = json_encode($json_data);	
+			$json = json_encode($json_data);
 
 			if ( $wgDiscordUseFileGetContents ) {
 				// They want to use file_get_contents
@@ -103,12 +108,12 @@ class DiscordUtils {
 					$result = file_get_contents( $value, false, $context );
 				}
 			} else {
-				// By default, we use cURL	
+				// By default, we use cURL
 				// Set up cURL multi handlers
 				$c_handlers = [];
 				$result = [];
 				$mh = curl_multi_init();
-	
+
 				foreach ($urls as &$value) {
 					$c_handlers[$value] = curl_init( $value );
 					curl_setopt( $c_handlers[$value], CURLOPT_POST, 1 ); // Send as a POST request
@@ -124,19 +129,19 @@ class DiscordUtils {
 					));
 					curl_multi_add_handle( $mh, $c_handlers[$value] );
 				}
-	
+
 				$running = null;
 				do {
 					curl_multi_exec($mh, $running);
 				} while ($running);
-	
+
 				// Remove all handlers and then close the multi handler
 				foreach($c_handlers as $k => $ch) {
 					$result[$k] = curl_multi_getcontent($ch);
 					wfDebugLog( 'discord', 'Result of cURL was: ' . $result[$k] );
 					curl_multi_remove_handle($mh, $ch);
 				}
-	
+
 				curl_multi_close($mh);
 			}
 		} );
@@ -157,14 +162,24 @@ class DiscordUtils {
 	 * Creates links for a specific MediaWiki User object
 	 */
 	public static function createUserLinks ($user) {
+		global $wgDiscordMaxCharsUsernames;
+
 		if ( $user instanceof User ) {
 			$isAnon = $user->isAnon();
 			$contribs = Title::newFromText("Special:Contributions/" . $user);
 
-			$userPage = DiscordUtils::createMarkdownLink(	$user, ( $isAnon ? $contribs : $user->getUserPage() )->getFullUrl( '', '', $proto = PROTO_HTTP ) );
-			$userTalk = DiscordUtils::createMarkdownLink( wfMessage( 'discord-talk' )->text(), $user->getTalkPage()->getFullUrl( '', '', $proto = PROTO_HTTP ) );
-			$userContribs = DiscordUtils::createMarkdownLink( wfMessage( 'discord-contribs' )->text(), $contribs->getFullURL( '', '', $proto = PROTO_HTTP ) );
-			$text = wfMessage( 'discord-userlinks', $userPage, $userTalk, $userContribs )->text();	
+			if ($wgDiscordMaxCharsUsernames) {
+				$user_abbr = strval($user);
+				if (strlen($user_abbr) > $wgDiscordMaxCharsUsernames) {
+					$user_abbr = substr($user_abbr, 0, $wgDiscordMaxCharsUsernames);
+					$user_abbr = $user_abbr.'...';
+				}
+			}
+
+			$userPage = DiscordUtils::createMarkdownLink(	$user_abbr, ( $isAnon ? $contribs : $user->getUserPage() )->getFullURL( '', false, PROTO_CANONICAL ) );
+			$userTalk = DiscordUtils::createMarkdownLink( wfMessage( 'discord-talk' )->text(), $user->getTalkPage()->getFullURL( '', false, PROTO_CANONICAL ) );
+			$userContribs = DiscordUtils::createMarkdownLink( wfMessage( 'discord-contribs' )->text(), $contribs->getFullURL( '', false, PROTO_CANONICAL ) );
+			$text = wfMessage( 'discord-userlinks', $userPage, $userTalk, $userContribs )->text();
 		} else {
 			// If it's a string, which can be likely (for example when range blocking a user)
 			// We need to handle this differently.
@@ -177,20 +192,17 @@ class DiscordUtils {
 	 * Creates formatted text for a specific Revision object
 	 */
 	public static function createRevisionText ($revision) {
-		$diff = DiscordUtils::createMarkdownLink( wfMessage( 'discord-diff' )->text(), $revision->getTitle()->getFullUrl("diff=prev", ["oldid" => $revision->getID()], $proto = PROTO_HTTP) );
+		$diff = DiscordUtils::createMarkdownLink( wfMessage( 'discord-diff' )->text(), $revision->getPageAsLinkTarget()->getFullURL( [ 'diff' => 'prev', 'oldid' => $revision->getId() ], false, PROTO_CANONICAL ) );
 		$minor = '';
 		$size = '';
 		if ( $revision->isMinor() ) {
 			$minor .= wfMessage( 'discord-minor' )->text();
 		}
-		$previous = $revision->getPrevious();
-		if ( $previous ) {
-			$size .= wfMessage( 'discord-size', sprintf( "%+d", $revision->getSize() - $previous->getSize() ) )->text();
-		} else if ( $revision->getParentId() ) {
-			// Try and get the parent revision based on the ID, if we can
-			$previous = Revision::newFromId( $revision->getParentId() );
-			if ($previous) {
-				$size .= wfMessage( 'discord-size', sprintf( "%+d", $revision->getSize() - $previous->getSize() ) )->text();
+		$parentId = $revision->getParentId();
+		if ( $parentId ) {
+			$parent = MediaWikiServices::getInstance()->getRevisionLookup()->getRevisionById( $parentId );
+			if ( $parent ) {
+				$size .= wfMessage( 'discord-size', sprintf( "%+d", $revision->getSize() - $parent->getSize() ) )->text();
 			}
 		}
 		if ( $size == '' ) {
@@ -199,7 +211,7 @@ class DiscordUtils {
 		$text = wfMessage( 'discord-revisionlinks', $diff, $minor, $size )->text();
 		return $text;
 	}
-	
+
 	/**
 	 * Strip bad characters from a URL
 	 */
@@ -209,20 +221,20 @@ class DiscordUtils {
 		$url = str_replace(")", "%29", $url);
 		return $url;
 	}
-	
+
 	/**
 	 * Formats bytes to a string representing B, KB, MB, GB, TB
 	 */
-	public static function formatBytes($bytes, $precision = 2) { 
-    $units = array('B', 'KB', 'MB', 'GB', 'TB'); 
+	public static function formatBytes($bytes, $precision = 2) {
+    $units = array('B', 'KB', 'MB', 'GB', 'TB');
 
-    $bytes = max($bytes, 0); 
-    $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
-    $pow = min($pow, count($units) - 1); 
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
 
-    $bytes /= (1 << (10 * $pow)); 
+    $bytes /= (1 << (10 * $pow));
 
-    return round($bytes, $precision) . ' ' . $units[$pow]; 
+    return round($bytes, $precision) . ' ' . $units[$pow];
 	}
 
 	/**
@@ -236,6 +248,15 @@ class DiscordUtils {
 				$text = $text.'...';
 			}
 		}
+		return $text;
+	}
+
+	/**
+	 * Sanitise text input, including removing the potential for abuse
+	 * of Discord's @everyone and @here pings
+	 */
+	public static function sanitiseText($text) {
+		$text = preg_replace('/(`|@)/', '', $text);
 		return $text;
 	}
 }
